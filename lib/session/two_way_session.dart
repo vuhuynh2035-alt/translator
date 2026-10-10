@@ -98,6 +98,7 @@ class TwoWaySession extends ChangeNotifier {
   Future<void> toggle(BoothSide side) async {
     if (working) return;
     if (listening == side) {
+      autoMode = false;
       await _close();
       return;
     }
@@ -183,6 +184,11 @@ class TwoWaySession extends ChangeNotifier {
       _closing = false;
       status = 'Sẵn sàng';
       notifyListeners();
+      
+      if (autoMode && side != null) {
+        // If empty text, restart the same side
+        unawaited(_open(side));
+      }
       return;
     }
     final started = Stopwatch()..start();
@@ -219,7 +225,7 @@ class TwoWaySession extends ChangeNotifier {
       status = 'Sẵn sàng';
       notifyListeners();
       
-      if (autoMode && side != null && text.isNotEmpty) {
+      if (autoMode && side != null) {
         final nextSide = side == BoothSide.other ? BoothSide.mine : BoothSide.other;
         unawaited(_open(nextSide));
       }

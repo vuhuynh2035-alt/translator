@@ -103,22 +103,45 @@ class _ContinuousPageState extends State<ContinuousPage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                ChoiceChips<OutputMode>(
-                  selected: current.output,
-                  onSelected: (mode) => widget.settings.update(current.copyWith(output: mode)),
-                  options: const [
-                    (OutputMode.text, 'Chỉ chữ'),
-                    (OutputMode.audio, 'Chỉ giọng'),
-                    (OutputMode.both, 'Cả hai'),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ChoiceChips<PlaybackTarget>(
-                  selected: current.playback,
-                  onSelected: (target) => widget.settings.update(current.copyWith(playback: target)),
-                  options: const [
-                    (PlaybackTarget.headphones, 'Tai nghe'),
-                    (PlaybackTarget.speaker, 'Loa'),
+                Row(
+                  children: [
+                    FilterChip(
+                      label: const Text('Tai nghe'),
+                      selected: current.output != OutputMode.text && current.playback == PlaybackTarget.headphones,
+                      onSelected: (selected) {
+                        if (selected) {
+                          widget.settings.update(current.copyWith(output: OutputMode.both, playback: PlaybackTarget.headphones));
+                        } else {
+                          widget.settings.update(current.copyWith(output: OutputMode.text));
+                        }
+                      },
+                      selectedColor: BoothColors.lime,
+                      labelStyle: TextStyle(
+                        color: (current.output != OutputMode.text && current.playback == PlaybackTarget.headphones)
+                            ? const Color(0xFF1A2208)
+                            : context.booth.paper,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilterChip(
+                      label: const Text('Loa'),
+                      selected: current.output != OutputMode.text && current.playback == PlaybackTarget.speaker,
+                      onSelected: (selected) {
+                        if (selected) {
+                          widget.settings.update(current.copyWith(output: OutputMode.both, playback: PlaybackTarget.speaker));
+                        } else {
+                          widget.settings.update(current.copyWith(output: OutputMode.text));
+                        }
+                      },
+                      selectedColor: BoothColors.lime,
+                      labelStyle: TextStyle(
+                        color: (current.output != OutputMode.text && current.playback == PlaybackTarget.speaker)
+                            ? const Color(0xFF1A2208)
+                            : context.booth.paper,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),

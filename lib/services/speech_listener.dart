@@ -32,6 +32,10 @@ class SpeechListener {
     required void Function(String text, bool isFinal) onText,
     void Function(double level)? onLevel,
   }) async {
+    if (_speech.isListening) {
+      await _speech.cancel();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
     _done = Completer<void>();
     await _speech.listen(
       onResult: (result) => onText(result.recognizedWords, result.finalResult),

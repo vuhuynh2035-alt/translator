@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/language.dart';
 import '../models/settings.dart';
@@ -155,9 +156,21 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           const SizedBox(height: 12),
           if (draft.provider == AiProvider.gemini)
-            TextField(
-              controller: _gemini,
-              decoration: const InputDecoration(labelText: 'Model Gemini', hintText: 'gemini-2.5-flash'),
+            DropdownButtonFormField<String>(
+              value: const ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-exp'].contains(_gemini.text) ? _gemini.text : 'gemini-1.5-flash',
+              decoration: const InputDecoration(labelText: 'Chọn Mô hình AI (Online)'),
+              items: const [
+                DropdownMenuItem(value: 'gemini-2.5-flash', child: Text('Gemini 2.5 Flash (Nhanh nhất)')),
+                DropdownMenuItem(value: 'gemini-1.5-flash', child: Text('Gemini 1.5 Flash (Ổn định)')),
+                DropdownMenuItem(value: 'gemini-1.5-pro', child: Text('Gemini 1.5 Pro (Thông minh)')),
+                DropdownMenuItem(value: 'gemini-2.0-flash-exp', child: Text('Gemini 2.0 Flash (Thử nghiệm)')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  _gemini.text = value;
+                  _write();
+                }
+              },
             )
           else ...[
             TextField(
@@ -250,6 +263,20 @@ class _SettingsPageState extends State<SettingsPage> {
           Text(
             'Nhận dạng giọng nói dùng công cụ của điện thoại. iOS có thể nhận dạng trên máy nếu đã tải ngôn ngữ. Một số máy Android vẫn cần mạng cho bước nghe, dù phần dịch đã offline.',
             style: TextStyle(color: context.booth.mute, height: 1.4),
+          ),
+          const SizedBox(height: 32),
+          Center(
+            child: FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const SizedBox();
+                final info = snapshot.data!;
+                return Text(
+                  'Phiên bản: ${info.version}+${info.buildNumber}',
+                  style: TextStyle(color: context.booth.mute, fontSize: 12),
+                );
+              },
+            ),
           ),
         ],
       ),

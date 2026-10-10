@@ -162,11 +162,14 @@ class ConferenceSession extends ChangeNotifier {
     phase = 'Đang nghe';
     notifyListeners();
     await audioRoute.release();
+    
+    Timer? silenceTimer;
+    
     await listener.listen(
       localeId: heard.sttLocale,
       onDevice: current.engine == EngineMode.offline,
-      pauseFor: Duration(milliseconds: current.silenceMs),
-      listenFor: const Duration(seconds: 45),
+      pauseFor: const Duration(seconds: 10),
+      listenFor: const Duration(seconds: 60),
       onLevel: _onLevel,
       onText: (text, isFinal) {
         if (!isFinal) {
@@ -175,7 +178,15 @@ class ConferenceSession extends ChangeNotifier {
           for (final piece in cursor.take(fullText: text, flush: false)) {
             _enqueue(piece);
           }
+          
+          silenceTimer?.cancel();
+          if (text.trim().isNotEmpty) {
+            silenceTimer = Timer(Duration(milliseconds: current.silenceMs), () {
+              if (running) listener.stop();
+            });
+          }
         } else {
+          silenceTimer?.cancel();
           _debounce?.cancel();
           for (final piece in cursor.take(fullText: text, flush: true)) {
             _enqueue(piece);
@@ -186,6 +197,7 @@ class ConferenceSession extends ChangeNotifier {
         notifyListeners();
       },
     );
+    silenceTimer?.cancel();
   }
 
   void _onLevel(double level) {

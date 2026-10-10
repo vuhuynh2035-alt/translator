@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
     <application
-        android:label="Phiên dịch"
+        android:label="phiendich"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

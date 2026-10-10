@@ -19,7 +19,7 @@ class TranslatorApp extends StatelessWidget {
       animation: settings,
       builder: (context, _) {
         return MaterialApp(
-          title: 'Phiên dịch',
+          title: 'phiendich',
           debugShowCheckedModeBanner: false,
           themeMode: ThemeMode.system,
           theme: buildBoothTheme(brightness: Brightness.light),

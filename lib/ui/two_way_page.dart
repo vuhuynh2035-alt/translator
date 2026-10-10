@@ -73,17 +73,6 @@ class _TwoWayPageState extends State<TwoWayPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(session.status, style: TextStyle(color: context.booth.mute)),
-                    Row(
-                      children: [
-                        Text('Tự động lặp', style: TextStyle(color: context.booth.mute, fontSize: 13)),
-                        const SizedBox(width: 8),
-                        Switch(
-                          value: session.autoMode,
-                          activeColor: BoothColors.lime,
-                          onChanged: locked ? null : (val) => session.autoMode = val,
-                        ),
-                      ],
-                    ),
                   ],
                 ),
                 if (session.latencyMs != null)
@@ -134,7 +123,7 @@ class _TwoWayPageState extends State<TwoWayPage> {
                       ),
                       const SizedBox(height: 12),
                       _SideButton(
-                        label: session.listening == BoothSide.other ? 'Dừng và dịch cho tôi' : 'Nghe đối phương',
+                        label: session.listening == BoothSide.other ? '■ Dừng nghe đối phương' : '● Liên tục nghe đối phương',
                         color: BoothColors.mint,
                         enabled: !session.working && session.listening != BoothSide.mine,
                         onPressed: () => session.toggle(BoothSide.other),
@@ -186,7 +175,7 @@ class _TwoWayPageState extends State<TwoWayPage> {
                       ),
                       const SizedBox(height: 12),
                       _SideButton(
-                        label: session.listening == BoothSide.mine ? 'Dừng và phát cho họ' : 'Tôi nói',
+                        label: session.listening == BoothSide.mine ? '■ Dừng nghe tôi' : '● Liên tục nghe tôi',
                         color: BoothColors.lime,
                         enabled: !session.working && session.listening != BoothSide.other,
                         onPressed: () => session.toggle(BoothSide.mine),

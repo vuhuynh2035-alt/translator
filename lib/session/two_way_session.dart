@@ -58,10 +58,10 @@ class TwoWaySession extends ChangeNotifier {
   String? notice;
   int? latencyMs;
   double sound = 0;
-
-  bool autoMode = false;
   PlaybackTarget topPlayback = PlaybackTarget.speaker;
   PlaybackTarget bottomPlayback = PlaybackTarget.headphones;
+  
+  BoothSide? _lockedSide;
 
   Timer? _debounce;
   bool _closing = false;
@@ -98,11 +98,15 @@ class TwoWaySession extends ChangeNotifier {
   Future<void> toggle(BoothSide side) async {
     if (working) return;
     if (listening == side) {
-      autoMode = false;
+      _lockedSide = null;
       await _close();
       return;
     }
-    if (listening != null) return;
+    _lockedSide = side;
+    if (listening != null) {
+      await _close(); // _close will automatically reopen the new _lockedSide because we just set it!
+      return;
+    }
     await _open(side);
   }
 
@@ -185,9 +189,8 @@ class TwoWaySession extends ChangeNotifier {
       status = 'Sẵn sàng';
       notifyListeners();
       
-      if (autoMode && side != null) {
-        // If empty text, restart the same side
-        unawaited(_open(side));
+      if (_lockedSide != null) {
+        unawaited(_open(_lockedSide!));
       }
       return;
     }
@@ -225,9 +228,8 @@ class TwoWaySession extends ChangeNotifier {
       status = 'Sẵn sàng';
       notifyListeners();
       
-      if (autoMode && side != null) {
-        final nextSide = side == BoothSide.other ? BoothSide.mine : BoothSide.other;
-        unawaited(_open(nextSide));
+      if (_lockedSide != null) {
+        unawaited(_open(_lockedSide!));
       }
     }
   }

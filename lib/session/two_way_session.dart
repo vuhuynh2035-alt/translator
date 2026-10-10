@@ -59,6 +59,10 @@ class TwoWaySession extends ChangeNotifier {
   int? latencyMs;
   double sound = 0;
 
+  bool autoMode = false;
+  PlaybackTarget topPlayback = PlaybackTarget.speaker;
+  PlaybackTarget bottomPlayback = PlaybackTarget.headphones;
+
   Timer? _debounce;
   bool _closing = false;
   BoothSide _draftSide = BoothSide.other;
@@ -183,7 +187,7 @@ class TwoWaySession extends ChangeNotifier {
     final to = side == BoothSide.other
         ? AppLanguage.byCode(current.myLanguage)
         : AppLanguage.byCode(current.heardLanguage);
-    final route = side == BoothSide.other ? current.playback : PlaybackTarget.speaker;
+    final route = side == BoothSide.other ? topPlayback : bottomPlayback;
     try {
       final translation = await draft.resolve(text);
       latencyMs = started.elapsedMilliseconds;
@@ -202,8 +206,7 @@ class TwoWaySession extends ChangeNotifier {
       status = current.speaks ? 'Đang phát' : 'Đã dịch';
       notifyListeners();
       if (current.speaks && translation.trim().isNotEmpty) {
-        await audioRoute.apply(route);
-        await speaker.speak(translation, to.ttsLocale, rate: current.ttsRate, pitch: current.ttsPitch);
+        await speaker.speak(translation, to.ttsLocale, rate: current.ttsRate, pitch: current.ttsPitch, target: route);
       }
     } catch (caught) {
       error = caught is TranslationException ? caught.message : 'Không dịch được.';
@@ -212,6 +215,11 @@ class TwoWaySession extends ChangeNotifier {
       _closing = false;
       status = 'Sẵn sàng';
       notifyListeners();
+      
+      if (autoMode && side != null && text.isNotEmpty) {
+        final nextSide = side == BoothSide.other ? BoothSide.mine : BoothSide.other;
+        unawaited(_open(nextSide));
+      }
     }
   }
 

@@ -69,7 +69,23 @@ class _TwoWayPageState extends State<TwoWayPage> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
               children: [
-                Text(session.status, style: TextStyle(color: context.booth.mute)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(session.status, style: TextStyle(color: context.booth.mute)),
+                    Row(
+                      children: [
+                        Text('Tự động lặp', style: TextStyle(color: context.booth.mute, fontSize: 13)),
+                        const SizedBox(width: 8),
+                        Switch(
+                          value: session.autoMode,
+                          activeColor: BoothColors.lime,
+                          onChanged: locked ? null : (val) => session.autoMode = val,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
                 if (session.latencyMs != null)
                   Text('${session.latencyMs} ms tới bản dịch', style: const TextStyle(color: BoothColors.lime)),
                 if (session.notice != null) Text(session.notice!, style: const TextStyle(color: BoothColors.mint)),
@@ -79,7 +95,17 @@ class _TwoWayPageState extends State<TwoWayPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Eyebrow('Đối phương'),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Eyebrow('Đối phương'),
+                          ChoiceChips<PlaybackTarget>(
+                            selected: session.topPlayback,
+                            onSelected: locked ? (_) {} : (t) => session.topPlayback = t,
+                            options: const [(PlaybackTarget.speaker, 'Loa'), (PlaybackTarget.headphones, 'Tai nghe')],
+                          ),
+                        ],
+                      ),
                       LanguageMenu(
                         value: current.heardLanguage,
                         onChanged: locked ? (_) {} : (code) => widget.settings.update(current.copyWith(heardLanguage: code)),
@@ -113,11 +139,6 @@ class _TwoWayPageState extends State<TwoWayPage> {
                         enabled: !session.working && session.listening != BoothSide.mine,
                         onPressed: () => session.toggle(BoothSide.other),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Phát cho bạn qua ${current.playback == PlaybackTarget.headphones ? 'tai nghe' : 'loa'}.',
-                        style: TextStyle(color: context.booth.mute, fontSize: 12),
-                      ),
                     ],
                   ),
                 ),
@@ -126,7 +147,17 @@ class _TwoWayPageState extends State<TwoWayPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Eyebrow('Bạn', color: BoothColors.mint),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Eyebrow('Bạn', color: BoothColors.mint),
+                          ChoiceChips<PlaybackTarget>(
+                            selected: session.bottomPlayback,
+                            onSelected: locked ? (_) {} : (t) => session.bottomPlayback = t,
+                            options: const [(PlaybackTarget.speaker, 'Loa'), (PlaybackTarget.headphones, 'Tai nghe')],
+                          ),
+                        ],
+                      ),
                       LanguageMenu(
                         value: current.myLanguage,
                         onChanged: locked ? (_) {} : (code) => widget.settings.update(current.copyWith(myLanguage: code)),
@@ -160,25 +191,12 @@ class _TwoWayPageState extends State<TwoWayPage> {
                         enabled: !session.working && session.listening != BoothSide.other,
                         onPressed: () => session.toggle(BoothSide.mine),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Luôn phát ra loa để đối phương nghe được.',
-                        style: TextStyle(color: context.booth.mute, fontSize: 12),
-                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 16),
                 LiveMeter(level: session.sound, active: session.listening != null),
                 const SizedBox(height: 12),
-                ChoiceChips<PlaybackTarget>(
-                  selected: current.playback,
-                  onSelected: locked ? (_) {} : (target) => widget.settings.update(current.copyWith(playback: target)),
-                  options: const [
-                    (PlaybackTarget.headphones, 'Tôi nghe bằng tai nghe'),
-                    (PlaybackTarget.speaker, 'Tôi nghe bằng loa'),
-                  ],
-                ),
               ],
             ),
           ),

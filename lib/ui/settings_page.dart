@@ -56,8 +56,8 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       await widget.offline.ensureModels(AppLanguage.byCode(draft.heardLanguage), AppLanguage.byCode(draft.myLanguage));
       _modelMessage = 'Đã có mô hình trên máy cho cặp ngôn ngữ này.';
-    } catch (_) {
-      _modelMessage = 'Chưa tải được. Cần mạng một lần, rồi có thể dịch offline.';
+    } catch (e) {
+      _modelMessage = 'Lỗi tải: $e\nCần mạng hoặc Google Play Services.';
     } finally {
       if (mounted) setState(() => _downloading = false);
     }
@@ -142,6 +142,17 @@ class _SettingsPageState extends State<SettingsPage> {
             obscureText: true,
             decoration: const InputDecoration(labelText: 'API key'),
           ),
+          const SizedBox(height: 8),
+          if (draft.provider == AiProvider.gemini)
+            SelectableText(
+              'Lấy API Key miễn phí tại: https://aistudio.google.com/app/apikey',
+              style: TextStyle(color: context.booth.mute, fontSize: 13),
+            )
+          else
+            SelectableText(
+              'Lấy API Key tại: https://platform.openai.com/api-keys',
+              style: TextStyle(color: context.booth.mute, fontSize: 13),
+            ),
           const SizedBox(height: 12),
           if (draft.provider == AiProvider.gemini)
             TextField(

@@ -74,6 +74,36 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
+          const Eyebrow('Giao diện'),
+          const SizedBox(height: 8),
+          ChoiceChips<int>(
+            selected: draft.themeMode,
+            onSelected: (mode) {
+              draft = draft.copyWith(themeMode: mode);
+              _write();
+            },
+            options: const [
+              (0, 'Hệ thống'),
+              (1, 'Sáng'),
+              (2, 'Tối'),
+            ],
+          ),
+          const SizedBox(height: 18),
+          const Eyebrow('Cỡ chữ bản dịch'),
+          const SizedBox(height: 8),
+          Slider(
+            value: draft.fontSize,
+            min: 14.0,
+            max: 48.0,
+            divisions: 17, // (48-14)/2 = 17 steps
+            activeColor: BoothColors.lime,
+            label: '${draft.fontSize.round()} px',
+            onChanged: (value) {
+              draft = draft.copyWith(fontSize: value);
+              _write();
+            },
+          ),
+          const SizedBox(height: 18),
           const Eyebrow('Độ chính xác'),
           const SizedBox(height: 8),
           ChoiceChips<EngineMode>(

@@ -51,9 +51,38 @@ class HomePage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 18),
-            Text(
-              '${engineLabel(current.engine)}  ·  ${outputLabel(current.output)}',
-              style: TextStyle(color: context.booth.mute),
+            Row(
+              children: [
+                Expanded(
+                  child: _AudioToggle(
+                    icon: Icons.volume_up_rounded,
+                    label: 'Loa ngoài',
+                    isActive: current.output != OutputMode.text && current.playback == PlaybackTarget.speaker,
+                    onTap: () {
+                      if (current.output != OutputMode.text && current.playback == PlaybackTarget.speaker) {
+                        settings.update(current.copyWith(output: OutputMode.text));
+                      } else {
+                        settings.update(current.copyWith(output: OutputMode.both, playback: PlaybackTarget.speaker));
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _AudioToggle(
+                    icon: Icons.headphones_rounded,
+                    label: 'Tai nghe',
+                    isActive: current.output != OutputMode.text && current.playback == PlaybackTarget.headphones,
+                    onTap: () {
+                      if (current.output != OutputMode.text && current.playback == PlaybackTarget.headphones) {
+                        settings.update(current.copyWith(output: OutputMode.text));
+                      } else {
+                        settings.update(current.copyWith(output: OutputMode.both, playback: PlaybackTarget.headphones));
+                      }
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 22),
             _ModeCard(
@@ -126,19 +155,30 @@ class _ModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: context.booth.panel,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
+    return Container(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: context.booth.line),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-          child: Column(
+        ],
+      ),
+      child: Material(
+        color: context.booth.panel,
+        borderRadius: BorderRadius.circular(24),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border.all(color: context.booth.line, width: 0.5),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Eyebrow(kicker, color: accent),
@@ -149,6 +189,73 @@ class _ModeCard extends StatelessWidget {
               const SizedBox(height: 14),
               Icon(Icons.arrow_forward, color: accent),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AudioToggle extends StatelessWidget {
+  const _AudioToggle({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: BoothColors.lime.withOpacity(0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                )
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+      ),
+      child: Material(
+        color: isActive ? BoothColors.lime : context.booth.panel,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border.all(color: isActive ? BoothColors.lime : context.booth.line, width: 0.5),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: isActive ? const Color(0xFF1A2208) : context.booth.paper, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isActive ? const Color(0xFF1A2208) : context.booth.paper,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

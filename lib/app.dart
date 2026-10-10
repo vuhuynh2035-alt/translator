@@ -18,10 +18,15 @@ class TranslatorApp extends StatelessWidget {
     return AnimatedBuilder(
       animation: settings,
       builder: (context, _) {
+        final themeMode = switch (settings.settings.themeMode) {
+          1 => ThemeMode.light,
+          2 => ThemeMode.dark,
+          _ => ThemeMode.system,
+        };
         return MaterialApp(
           title: 'phiendich',
           debugShowCheckedModeBanner: false,
-          themeMode: ThemeMode.system,
+          themeMode: themeMode,
           theme: buildBoothTheme(brightness: Brightness.light),
           darkTheme: buildBoothTheme(brightness: Brightness.dark),
           home: HomePage(settings: settings, offline: offline, client: client),

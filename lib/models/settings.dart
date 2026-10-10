@@ -22,6 +22,8 @@ class AppSettings {
     required this.silenceMs,
     required this.ttsRate,
     required this.ttsPitch,
+    required this.themeMode,
+    required this.fontSize,
   });
 
   final EngineMode engine;
@@ -38,6 +40,8 @@ class AppSettings {
   final int silenceMs;
   final double ttsRate;
   final double ttsPitch;
+  final int themeMode; // 0 = System, 1 = Light, 2 = Dark
+  final double fontSize;
 
   static const fallback = AppSettings(
     engine: EngineMode.online,
@@ -54,6 +58,8 @@ class AppSettings {
     silenceMs: 700,
     ttsRate: 0.56,
     ttsPitch: 1.0,
+    themeMode: 0,
+    fontSize: 24.0,
   );
 
   bool get speaks => output != OutputMode.text;
@@ -75,6 +81,8 @@ class AppSettings {
     int? silenceMs,
     double? ttsRate,
     double? ttsPitch,
+    int? themeMode,
+    double? fontSize,
   }) {
     return AppSettings(
       engine: engine ?? this.engine,
@@ -91,6 +99,8 @@ class AppSettings {
       silenceMs: silenceMs ?? this.silenceMs,
       ttsRate: ttsRate ?? this.ttsRate,
       ttsPitch: ttsPitch ?? this.ttsPitch,
+      themeMode: themeMode ?? this.themeMode,
+      fontSize: fontSize ?? this.fontSize,
     );
   }
 }

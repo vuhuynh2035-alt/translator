@@ -28,6 +28,8 @@ class SettingsStore extends ChangeNotifier {
       silenceMs: prefs.getInt('silenceMs') ?? AppSettings.fallback.silenceMs,
       ttsRate: prefs.getDouble('ttsRate') ?? AppSettings.fallback.ttsRate,
       ttsPitch: prefs.getDouble('ttsPitch') ?? AppSettings.fallback.ttsPitch,
+      themeMode: prefs.getInt('themeMode') ?? AppSettings.fallback.themeMode,
+      fontSize: prefs.getDouble('fontSize') ?? AppSettings.fallback.fontSize,
     );
     notifyListeners();
   }
@@ -50,6 +52,8 @@ class SettingsStore extends ChangeNotifier {
     await prefs.setInt('silenceMs', next.silenceMs);
     await prefs.setDouble('ttsRate', next.ttsRate);
     await prefs.setDouble('ttsPitch', next.ttsPitch);
+    await prefs.setInt('themeMode', next.themeMode);
+    await prefs.setDouble('fontSize', next.fontSize);
   }
 
   static T _enum<T extends Enum>(List<T> values, String? name, T fallback) {

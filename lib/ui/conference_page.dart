@@ -35,6 +35,39 @@ class _ConferencePageState extends State<ConferencePage> {
     super.dispose();
   }
 
+  void _showSaveDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.booth.panel,
+        title: const Text('Lưu nội dung?'),
+        content: const Text('Bạn có muốn lưu lại toàn bộ nội dung đã dịch vào bộ nhớ tạm (clipboard) không?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pop(context); // Go back to Home Page
+            },
+            child: const Text('Thoát không lưu', style: TextStyle(color: BoothColors.coral)),
+          ),
+          FilledButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: session.exportTranscript()));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã copy lịch sử hội thoại')));
+              Navigator.pop(ctx);
+              Navigator.pop(context); // Go back to Home Page
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: BoothColors.lime,
+              foregroundColor: const Color(0xFF1A2208),
+            ),
+            child: const Text('Lưu & Thoát'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_saverMode) {
@@ -57,6 +90,111 @@ class _ConferencePageState extends State<ConferencePage> {
       animation: Listenable.merge([session, widget.settings]),
       builder: (context, _) {
         final current = widget.settings.settings;
+        
+        if (session.running) {
+          return Scaffold(
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      reverse: true,
+                      padding: const EdgeInsets.all(24),
+                      itemCount: session.fullHistory.length + 1,
+                      itemBuilder: (context, i) {
+                        final index = session.fullHistory.length - i;
+                        if (index == session.fullHistory.length) {
+                          // Live partial
+                          if (session.livePartial.isEmpty && session.liveTranslation.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 24.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (session.livePartial.isNotEmpty)
+                                  Text(
+                                    session.livePartial,
+                                    style: TextStyle(
+                                      color: context.booth.mute,
+                                      fontSize: current.fontSize * 0.75,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                if (session.liveTranslation.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    session.liveTranslation,
+                                    style: TextStyle(
+                                      fontSize: current.fontSize,
+                                      height: 1.35,
+                                      fontWeight: FontWeight.w600,
+                                      color: BoothColors.mint,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }
+                        
+                        // History items
+                        final item = session.fullHistory[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 24.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.source,
+                                style: TextStyle(
+                                  color: context.booth.mute,
+                                  fontSize: current.fontSize * 0.75,
+                                  height: 1.35,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                item.translation,
+                                style: TextStyle(
+                                  fontSize: current.fontSize,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w600,
+                                  color: BoothColors.lime, // slightly different for history
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: SizedBox(
+                      height: 64,
+                      width: double.infinity,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: BoothColors.coral,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        onPressed: () {
+                          session.stop();
+                          _showSaveDialog(context);
+                        },
+                        child: const Text('Dừng ghi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final showText = current.output != OutputMode.audio;
         return Scaffold(
           appBar: AppBar(

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -26,6 +27,56 @@ class _SettingsPageState extends State<SettingsPage> {
   late final TextEditingController _base = TextEditingController(text: draft.openAiBaseUrl);
   String? _modelMessage;
   bool _downloading = false;
+  
+  List<String> _geminiModels = [
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-2.0-flash-exp'
+  ];
+  bool _fetchingModels = false;
+  String? _modelFetchNotice;
+
+  Future<void> _fetchGeminiModels() async {
+    final key = _key.text.trim();
+    if (key.isEmpty) {
+      setState(() => _modelFetchNotice = 'Vui lòng nhập API Key trước');
+      return;
+    }
+    setState(() {
+      _fetchingModels = true;
+      _modelFetchNotice = null;
+    });
+    try {
+      final response = await widget.client.httpClient.get(
+        Uri.parse('https://generativelanguage.googleapis.com/v1beta/models?key=$key'),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final models = (data['models'] as List).cast<Map<String, dynamic>>();
+        final names = models
+            .where((m) => (m['supportedGenerationMethods'] as List?)?.contains('generateContent') ?? false)
+            .map((m) => (m['name'] as String).replaceFirst('models/', ''))
+            .toList();
+        if (names.isNotEmpty) {
+          setState(() {
+            _geminiModels = names;
+            if (!names.contains(_gemini.text)) {
+              _gemini.text = names.first;
+              _write();
+            }
+            _modelFetchNotice = 'Đã tải ${names.length} mô hình';
+          });
+        }
+      } else {
+        setState(() => _modelFetchNotice = 'Lỗi API: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() => _modelFetchNotice = 'Lỗi kết nối mạng');
+    } finally {
+      if (mounted) setState(() => _fetchingModels = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -155,24 +206,36 @@ class _SettingsPageState extends State<SettingsPage> {
               style: TextStyle(color: context.booth.mute, fontSize: 13),
             ),
           const SizedBox(height: 12),
-          if (draft.provider == AiProvider.gemini)
-            DropdownButtonFormField<String>(
-              value: const ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-exp'].contains(_gemini.text) ? _gemini.text : 'gemini-1.5-flash',
-              decoration: const InputDecoration(labelText: 'Chọn Mô hình AI (Online)'),
-              items: const [
-                DropdownMenuItem(value: 'gemini-2.5-flash', child: Text('Gemini 2.5 Flash (Nhanh nhất)')),
-                DropdownMenuItem(value: 'gemini-1.5-flash', child: Text('Gemini 1.5 Flash (Ổn định)')),
-                DropdownMenuItem(value: 'gemini-1.5-pro', child: Text('Gemini 1.5 Pro (Thông minh)')),
-                DropdownMenuItem(value: 'gemini-2.0-flash-exp', child: Text('Gemini 2.0 Flash (Thử nghiệm)')),
+          if (draft.provider == AiProvider.gemini) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    value: _geminiModels.contains(_gemini.text) ? _gemini.text : (_geminiModels.isNotEmpty ? _geminiModels.first : null),
+                    decoration: const InputDecoration(labelText: 'Chọn Mô hình AI (Online)'),
+                    items: _geminiModels.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        _gemini.text = value;
+                        _write();
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _fetchingModels ? null : _fetchGeminiModels,
+                  icon: _fetchingModels ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.refresh),
+                  tooltip: 'Tải danh sách mô hình',
+                ),
               ],
-              onChanged: (value) {
-                if (value != null) {
-                  _gemini.text = value;
-                  _write();
-                }
-              },
-            )
-          else ...[
+            ),
+            if (_modelFetchNotice != null) ...[
+              const SizedBox(height: 4),
+              Text(_modelFetchNotice!, style: const TextStyle(color: BoothColors.lime, fontSize: 13)),
+            ],
+          ] else ...[
             TextField(
               controller: _openai,
               decoration: const InputDecoration(labelText: 'Model', hintText: 'gpt-4o-mini'),

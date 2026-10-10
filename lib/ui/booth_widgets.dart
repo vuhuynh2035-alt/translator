@@ -16,19 +16,8 @@ class BoothPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.booth.panel,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: context.booth.line, width: 0.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.white.withOpacity(0.05),
-            blurRadius: 2,
-            offset: const Offset(0, -1),
-          ),
-        ],
+        // Remove border for authentic neumorphism
+        boxShadow: context.neuShadows,
       ),
       child: Padding(padding: padding, child: child),
     );

@@ -88,8 +88,8 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 22),
             _ModeCard(
               kicker: '1 chiều',
-              title: 'Cuộc nói chuyện, bài nói',
-              body: 'Nghe ngôn ngữ đối phương và dịch liên tục vào tai nghe. Câu được dịch ngay khi vừa rõ, để bạn theo kịp và trả lời như cuộc trò chuyện thường.',
+              title: 'Dịch thuật một chiều',
+              body: 'Dịch liên tục và phát qua tai nghe. Giúp bạn nghe hiểu tức thì.',
               accent: BoothColors.lime,
               onTap: () {
                 Navigator.of(context).push(
@@ -99,11 +99,11 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 24),
             _ModeCard(
               kicker: '2 chiều',
-              title: 'Một nút nghe, một nút nói',
-              body: 'Bấm Nghe để dịch lời đối phương cho bạn. Bấm Nói để dịch lời bạn và phát ra loa cho đối phương nghe.',
+              title: 'Dịch thuật hai chiều',
+              body: 'Chạm để nói, chạm để dịch. Phù hợp cho giao tiếp trực tiếp.',
               accent: BoothColors.mint,
               onTap: () {
                 Navigator.of(context).push(
@@ -113,11 +113,11 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 24),
             _ModeCard(
               kicker: 'Hội thảo',
-              title: 'Bài giảng, diễn thuyết dài',
-              body: 'Dịch liên tục và lưu trữ mọi lời nói. Giữ cho điện thoại không bao giờ ngủ, có thể tắt đen màn hình để tiết kiệm pin tối đa.',
+              title: 'Ghi âm hội thảo',
+              body: 'Dịch toàn màn hình, lưu lịch sử, tắt màn hình để tiết kiệm pin.',
               accent: BoothColors.coral,
               onTap: () {
                 Navigator.of(context).push(
@@ -159,13 +159,7 @@ class _ModeCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.12),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: context.neuShadows,
       ),
       child: Material(
         color: context.booth.panel,
@@ -175,10 +169,7 @@ class _ModeCard extends StatelessWidget {
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              border: Border.all(color: context.booth.line, width: 0.5),
-              borderRadius: BorderRadius.circular(24),
-            ),
+            // removed border for neumorphism
             child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -216,21 +207,7 @@ class _AudioToggle extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: BoothColors.lime.withOpacity(0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                )
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
+        boxShadow: isActive ? [] : context.neuShadows,
       ),
       child: Material(
         color: isActive ? BoothColors.lime : context.booth.panel,
@@ -240,10 +217,7 @@ class _AudioToggle extends StatelessWidget {
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              border: Border.all(color: isActive ? BoothColors.lime : context.booth.line, width: 0.5),
-              borderRadius: BorderRadius.circular(16),
-            ),
+            // removed border for neumorphism
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

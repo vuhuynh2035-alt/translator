@@ -87,7 +87,7 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 22),
             _ModeCard(
-              kicker: 'Liên tục',
+              kicker: '1 chiều',
               title: 'Cuộc nói chuyện, bài nói',
               body: 'Nghe ngôn ngữ đối phương và dịch liên tục vào tai nghe. Câu được dịch ngay khi vừa rõ, để bạn theo kịp và trả lời như cuộc trò chuyện thường.',
               accent: BoothColors.lime,
@@ -101,7 +101,7 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             _ModeCard(
-              kicker: 'Hai chiều',
+              kicker: '2 chiều',
               title: 'Một nút nghe, một nút nói',
               body: 'Bấm Nghe để dịch lời đối phương cho bạn. Bấm Nói để dịch lời bạn và phát ra loa cho đối phương nghe.',
               accent: BoothColors.mint,

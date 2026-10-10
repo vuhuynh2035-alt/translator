@@ -36,17 +36,6 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-
-    applicationVariants.all {
-        val variant = this
-        variant.assembleProvider.get().doLast {
-            copy {
-                from("${layout.buildDirectory.get().asFile}/outputs/apk/release/app-release.apk")
-                into("${layout.buildDirectory.get().asFile}/outputs/flutter-apk/")
-                rename("app-release.apk", "phiendich_v${variant.versionName}.apk")
-            }
-        }
-    }
 }
 
 kotlin {

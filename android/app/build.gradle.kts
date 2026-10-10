@@ -39,9 +39,12 @@ android {
 
     applicationVariants.all {
         val variant = this
-        outputs.all {
-            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output.outputFileName = "phiendich_v${variant.versionName}.apk"
+        variant.assembleProvider.get().doLast {
+            copy {
+                from("${layout.buildDirectory.get().asFile}/outputs/apk/release/app-release.apk")
+                into("${layout.buildDirectory.get().asFile}/outputs/flutter-apk/")
+                rename("app-release.apk", "phiendich_v${variant.versionName}.apk")
+            }
         }
     }
 }

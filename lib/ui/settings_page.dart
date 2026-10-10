@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../models/language.dart';
@@ -48,7 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _modelFetchNotice = null;
     });
     try {
-      final response = await widget.client.httpClient.get(
+      final response = await http.get(
         Uri.parse('https://generativelanguage.googleapis.com/v1beta/models?key=$key'),
       );
       if (response.statusCode == 200) {

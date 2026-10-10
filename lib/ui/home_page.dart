@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/settings.dart';
 import '../services/settings_store.dart';
 import '../services/translation/offline_translator.dart';
 import '../theme.dart';
@@ -191,6 +192,7 @@ class _ModeCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

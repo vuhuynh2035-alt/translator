@@ -85,7 +85,6 @@ class ContinuousSession extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    await audioRoute.apply(settings.settings.playback);
     running = true;
     phase = 'Đang nghe';
     notifyListeners();
@@ -135,18 +134,22 @@ class ContinuousSession extends ChangeNotifier {
 
   Future<void> _run() async {
     while (running) {
+      var hadError = false;
       try {
         await _listenOnce();
         await listener.waitUntilIdle();
         if (!settings.settings.effectiveOverlap) await _pipeline;
       } catch (_) {
-        if (running) {
-          error = 'Phiên nghe bị ngắt. Đang nghe lại.';
-          notifyListeners();
-          await Future<void>.delayed(const Duration(milliseconds: 400));
+        hadError = true;
+      }
+      if (running) {
+        if (hadError || error != null) {
+          await Future<void>.delayed(const Duration(milliseconds: 1500));
+          error = null; // Clear error before retry so UI knows it's retrying
+        } else {
+          await Future<void>.delayed(const Duration(milliseconds: 200));
         }
       }
-      if (running) await Future<void>.delayed(const Duration(milliseconds: 40));
     }
   }
 
@@ -155,6 +158,10 @@ class ContinuousSession extends ChangeNotifier {
     final heard = AppLanguage.byCode(current.heardLanguage);
     phase = 'Đang nghe';
     notifyListeners();
+    
+    // Crucial: Release the audio mode so Android OS allows the microphone for SpeechToText
+    await audioRoute.release();
+    
     await listener.listen(
       localeId: heard.sttLocale,
       onDevice: current.engine == EngineMode.offline,

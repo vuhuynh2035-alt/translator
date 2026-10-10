@@ -46,4 +46,14 @@ class AudioRoute {
       );
     }
   }
+
+  Future<void> release() async {
+    if (kIsWeb) return;
+    if (Platform.isAndroid) {
+      final manager = AndroidAudioManager();
+      await manager.setMode(AndroidAudioHardwareMode.normal);
+      await manager.setSpeakerphoneOn(false);
+    }
+    // On iOS, resetting isn't strictly necessary for SpeechToText
+  }
 }

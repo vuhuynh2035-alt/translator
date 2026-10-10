@@ -129,6 +129,9 @@ class TwoWaySession extends ChangeNotifier {
     live = '';
     status = side == BoothSide.other ? 'Đang nghe đối phương' : 'Đang nghe bạn';
     notifyListeners();
+    
+    await audioRoute.release();
+    
     await listener.listen(
       localeId: language.sttLocale,
       onDevice: current.engine == EngineMode.offline,

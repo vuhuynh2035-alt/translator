@@ -147,10 +147,14 @@ class ConferenceSession extends ChangeNotifier {
       }
       if (running) {
         if (hadError || error != null) {
-          await Future<void>.delayed(const Duration(milliseconds: 1500));
+          try {
+            await listener.cancel();
+          } catch (_) {}
+          await Future<void>.delayed(const Duration(milliseconds: 600));
+          await listener.ensureReady();
           error = null;
         } else {
-          await Future<void>.delayed(const Duration(milliseconds: 200));
+          await Future<void>.delayed(const Duration(milliseconds: 150));
         }
       }
     }
@@ -327,10 +331,14 @@ class ConferenceSession extends ChangeNotifier {
     await audioRoute.apply(current.playback);
     phase = 'Đang nói';
     notifyListeners();
-    await speaker.speak(text, target.ttsLocale, rate: current.ttsRate, pitch: current.ttsPitch);
-    if (running) {
-      phase = 'Đang nghe';
-      notifyListeners();
+    try {
+      await speaker.speak(text, target.ttsLocale, rate: current.ttsRate, pitch: current.ttsPitch);
+    } finally {
+      await audioRoute.release();
+      if (running) {
+        phase = 'Đang nghe';
+        notifyListeners();
+      }
     }
   }
 

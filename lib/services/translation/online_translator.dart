@@ -42,6 +42,12 @@ class OnlineTranslator implements TranslationEngine {
     final uri = Uri.parse(
       'https://generativelanguage.googleapis.com/v1beta/models/$model:streamGenerateContent?alt=sse',
     );
+    final isThinkingModel = model.contains('thinking') || model.contains('2.5');
+    final generationConfig = <String, dynamic>{
+      'temperature': 0.2,
+      'maxOutputTokens': 256,
+      if (isThinkingModel) 'thinkingConfig': {'thinkingBudget': 0},
+    };
     final body = <String, dynamic>{
       'systemInstruction': {
         'parts': [
@@ -56,11 +62,7 @@ class OnlineTranslator implements TranslationEngine {
           ],
         },
       ],
-      'generationConfig': {
-        'temperature': 0.2,
-        'maxOutputTokens': 256,
-        'thinkingConfig': {'thinkingBudget': 0},
-      },
+      'generationConfig': generationConfig,
     };
     try {
       yield* _stream(

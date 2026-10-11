@@ -27,8 +27,30 @@ class _ContinuousPageState extends State<ContinuousPage> {
     client: widget.client,
   );
 
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    session.addListener(_autoScroll);
+  }
+
+  void _autoScroll() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
   @override
   void dispose() {
+    session.removeListener(_autoScroll);
+    _scrollController.dispose();
     session.dispose();
     super.dispose();
   }
@@ -39,219 +61,304 @@ class _ContinuousPageState extends State<ContinuousPage> {
       animation: Listenable.merge([session, widget.settings]),
       builder: (context, _) {
         final current = widget.settings.settings;
-        final showText = current.output != OutputMode.audio;
         return Scaffold(
           appBar: AppBar(
             backgroundColor: context.booth.ink,
             foregroundColor: context.booth.paper,
-            title: const Text('Liên tục'),
+            title: const Text('1 chiều'),
             actions: [
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 tooltip: 'Xóa lịch sử',
-                onPressed: session.fullHistory.isEmpty ? null : () {
-                  session.clear();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa lịch sử')));
-                },
+                onPressed: session.fullHistory.isEmpty
+                    ? null
+                    : () {
+                        session.clear();
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa lịch sử')));
+                      },
               ),
               IconButton(
                 icon: const Icon(Icons.copy),
-                tooltip: 'Copy lịch sử',
-                onPressed: session.fullHistory.isEmpty ? null : () {
-                  Clipboard.setData(ClipboardData(text: session.exportTranscript()));
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã copy lịch sử hội thoại')));
-                },
+                tooltip: 'Sao chép nội dung',
+                onPressed: session.fullHistory.isEmpty
+                    ? null
+                    : () {
+                        Clipboard.setData(ClipboardData(text: session.exportTranscript()));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã copy toàn bộ nội dung dịch')));
+                      },
               ),
               Padding(
                 padding: const EdgeInsets.only(right: 16),
-                child: Center(child: Text(engineLabel(current.engine), style: const TextStyle(color: BoothColors.lime))),
+                child: Center(
+                  child: Text(
+                    engineLabel(current.engine),
+                    style: const TextStyle(color: BoothColors.lime, fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
             ],
           ),
           body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+            child: Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: LanguageMenu(
-                        value: current.heardLanguage,
-                        onChanged: session.running
-                            ? (_) {}
-                            : (code) => widget.settings.update(current.copyWith(heardLanguage: code)),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.swap_horiz),
-                      color: context.booth.mute,
-                      onPressed: session.running ? null : () {
-                        widget.settings.update(current.copyWith(
-                          heardLanguage: current.myLanguage,
-                          myLanguage: current.heardLanguage,
-                        ));
-                      },
-                    ),
-                    Expanded(
-                      child: LanguageMenu(
-                        value: current.myLanguage,
-                        onChanged: session.running
-                            ? (_) {}
-                            : (code) => widget.settings.update(current.copyWith(myLanguage: code)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    FilterChip(
-                      label: const Text('Tai nghe'),
-                      selected: current.output != OutputMode.text && current.playback == PlaybackTarget.headphones,
-                      onSelected: (selected) {
-                        if (selected) {
-                          widget.settings.update(current.copyWith(output: OutputMode.both, playback: PlaybackTarget.headphones));
-                        } else {
-                          widget.settings.update(current.copyWith(output: OutputMode.text));
-                        }
-                      },
-                      selectedColor: BoothColors.lime,
-                      labelStyle: TextStyle(
-                        color: (current.output != OutputMode.text && current.playback == PlaybackTarget.headphones)
-                            ? const Color(0xFF1A2208)
-                            : context.booth.paper,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Loa'),
-                      selected: current.output != OutputMode.text && current.playback == PlaybackTarget.speaker,
-                      onSelected: (selected) {
-                        if (selected) {
-                          widget.settings.update(current.copyWith(output: OutputMode.both, playback: PlaybackTarget.speaker));
-                        } else {
-                          widget.settings.update(current.copyWith(output: OutputMode.text));
-                        }
-                      },
-                      selectedColor: BoothColors.lime,
-                      labelStyle: TextStyle(
-                        color: (current.output != OutputMode.text && current.playback == PlaybackTarget.speaker)
-                            ? const Color(0xFF1A2208)
-                            : context.booth.paper,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                LiveMeter(level: session.sound, active: session.running),
-                const SizedBox(height: 8),
-                Text(
-                  session.lastLatencyMs == null ? session.phase : '${session.phase}  ·  ${session.lastLatencyMs} ms',
-                  style: TextStyle(color: context.booth.mute),
-                ),
-                if (session.notice != null) ...[
-                  const SizedBox(height: 8),
-                  Text(session.notice!, style: const TextStyle(color: BoothColors.mint)),
-                ],
-                if (session.error != null) ...[
-                  const SizedBox(height: 8),
-                  Text(session.error!, style: const TextStyle(color: BoothColors.coral)),
-                ],
-                const SizedBox(height: 16),
-                BoothPanel(
+                // 1. Compact Control Bar
+                Container(
+                  color: context.booth.ink,
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Eyebrow('Đang nghe'),
-                      const SizedBox(height: 8),
-                      Text(
-                        session.livePartial.isEmpty ? '...' : session.livePartial,
-                        style: TextStyle(color: context.booth.mute, fontSize: 16, height: 1.35),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: LanguageMenu(
+                              value: current.heardLanguage,
+                              onChanged: session.running
+                                  ? (_) {}
+                                  : (code) => widget.settings.update(current.copyWith(heardLanguage: code)),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.swap_horiz, size: 20),
+                            color: context.booth.mute,
+                            onPressed: session.running
+                                ? null
+                                : () {
+                                    widget.settings.update(current.copyWith(
+                                      heardLanguage: current.myLanguage,
+                                      myLanguage: current.heardLanguage,
+                                    ));
+                                  },
+                          ),
+                          Expanded(
+                            child: LanguageMenu(
+                              value: current.myLanguage,
+                              onChanged: session.running
+                                  ? (_) {}
+                                  : (code) => widget.settings.update(current.copyWith(myLanguage: code)),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      const Eyebrow('Bản dịch', color: BoothColors.mint),
-                      const SizedBox(height: 8),
-                      Text(
-                        session.liveTranslation.isEmpty ? (showText ? 'Bản dịch hiện ở đây.' : 'Bản dịch sẽ được đọc lên.') : session.liveTranslation,
-                        style: TextStyle(
-                          fontSize: showText ? 28 : 18,
-                          height: 1.25,
-                          fontWeight: FontWeight.w600,
-                          color: showText ? context.booth.paper : context.booth.mute,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _HoldButton(
-                  running: session.running,
-                  onPressed: () => session.running ? session.stop() : session.start(),
-                ),
-                if (current.playback == PlaybackTarget.speaker)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      'Loa dễ lọt vào micro. Tai nghe giúp cuộc nói tiếp tục mà không phải chờ máy đọc xong.',
-                      style: TextStyle(color: context.booth.mute, height: 1.35),
-                    ),
-                  ),
-                if (session.history.length > 1) ...[
-                  const SizedBox(height: 22),
-                  const Eyebrow('Vừa rồi'),
-                  const SizedBox(height: 8),
-                  for (final caption in session.history.reversed.skip(1).take(6))
-                    InkWell(
-                      onTap: () => session.replay(caption.translation),
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 10, top: 4),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.volume_up, size: 16, color: BoothColors.lime),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                caption.translation,
-                                style: TextStyle(color: context.booth.mute, height: 1.3),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          FilterChip(
+                            label: const Text('Tai nghe'),
+                            selected: current.output != OutputMode.text && current.playback == PlaybackTarget.headphones,
+                            onSelected: (selected) {
+                              if (selected) {
+                                widget.settings.update(current.copyWith(output: OutputMode.both, playback: PlaybackTarget.headphones));
+                              } else {
+                                widget.settings.update(current.copyWith(output: OutputMode.text));
+                              }
+                            },
+                            selectedColor: BoothColors.lime,
+                            labelStyle: TextStyle(
+                              color: (current.output != OutputMode.text && current.playback == PlaybackTarget.headphones)
+                                  ? const Color(0xFF1A2208)
+                                  : context.booth.paper,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          const SizedBox(width: 8),
+                          FilterChip(
+                            label: const Text('Loa'),
+                            selected: current.output != OutputMode.text && current.playback == PlaybackTarget.speaker,
+                            onSelected: (selected) {
+                              if (selected) {
+                                widget.settings.update(current.copyWith(output: OutputMode.both, playback: PlaybackTarget.speaker));
+                              } else {
+                                widget.settings.update(current.copyWith(output: OutputMode.text));
+                              }
+                            },
+                            selectedColor: BoothColors.lime,
+                            labelStyle: TextStyle(
+                              color: (current.output != OutputMode.text && current.playback == PlaybackTarget.speaker)
+                                  ? const Color(0xFF1A2208)
+                                  : context.booth.paper,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          const Spacer(),
+                          if (session.running) ...[
+                            SizedBox(
+                              width: 50,
+                              height: 14,
+                              child: LiveMeter(level: session.sound, active: session.running),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              session.phase,
+                              style: TextStyle(
+                                color: session.phase == 'Đang nói'
+                                    ? BoothColors.lime
+                                    : (session.phase == 'Đang dịch' ? BoothColors.coral : context.booth.mute),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
+                      if (session.notice != null) ...[
+                        const SizedBox(height: 4),
+                        Text(session.notice!, style: const TextStyle(color: BoothColors.mint, fontSize: 12)),
+                      ],
+                      if (session.error != null) ...[
+                        const SizedBox(height: 4),
+                        Text(session.error!, style: const TextStyle(color: BoothColors.coral, fontSize: 12)),
+                      ],
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+
+                // 2. Continuous Transcription Display
+                Expanded(
+                  child: session.fullHistory.isEmpty && session.livePartial.isEmpty && session.liveTranslation.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                session.running ? Icons.mic : Icons.translate,
+                                size: 44,
+                                color: context.booth.mute.withOpacity(0.4),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                session.running ? 'Đang lắng nghe... Hãy nói vào micro' : 'Nhấn "Bắt đầu nghe" để phiên dịch liên tục',
+                                style: TextStyle(color: context.booth.mute, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          itemCount: session.fullHistory.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index == session.fullHistory.length) {
+                              if (session.livePartial.isEmpty && session.liveTranslation.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: context.booth.panel.withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: BoothColors.lime.withOpacity(0.5)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (session.livePartial.isNotEmpty)
+                                      Text(
+                                        session.livePartial,
+                                        style: TextStyle(
+                                          color: context.booth.mute,
+                                          fontSize: (current.fontSize * 0.85).clamp(12.0, 24.0),
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    if (session.liveTranslation.isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        session.liveTranslation,
+                                        style: TextStyle(
+                                          color: BoothColors.mint,
+                                          fontSize: current.fontSize.clamp(14.0, 32.0),
+                                          fontWeight: FontWeight.w700,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            }
+                            final item = session.fullHistory[index];
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: context.booth.panel,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: context.neuShadows,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          item.source,
+                                          style: TextStyle(
+                                            color: context.booth.mute,
+                                            fontSize: (current.fontSize * 0.85).clamp(12.0, 24.0),
+                                            height: 1.35,
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.volume_up, size: 18, color: BoothColors.lime),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        tooltip: 'Đọc lại',
+                                        onPressed: () => session.replay(item.translation),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    item.translation,
+                                    style: TextStyle(
+                                      color: BoothColors.mint,
+                                      fontSize: current.fontSize.clamp(14.0, 32.0),
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
+
+                // 3. Compact Bottom Control Button
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: session.running ? BoothColors.coral : BoothColors.lime,
+                        foregroundColor: const Color(0xFF1A2208),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: Icon(session.running ? Icons.stop_rounded : Icons.mic_rounded, size: 20),
+                      label: Text(
+                        session.running ? 'Dừng nghe' : 'Bắt đầu nghe',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      ),
+                      onPressed: () => session.running ? session.stop() : session.start(),
                     ),
-                ],
+                  ),
+                ),
               ],
             ),
           ),
         );
       },
-    );
-  }
-}
-
-class _HoldButton extends StatelessWidget {
-  const _HoldButton({required this.running, required this.onPressed});
-
-  final bool running;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 64,
-      width: double.infinity,
-      child: FilledButton(
-        style: FilledButton.styleFrom(
-          backgroundColor: running ? BoothColors.coral : BoothColors.lime,
-          foregroundColor: const Color(0xFF1A2208),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-        onPressed: onPressed,
-        child: Text(running ? 'Dừng' : 'Bắt đầu nghe', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-      ),
     );
   }
 }

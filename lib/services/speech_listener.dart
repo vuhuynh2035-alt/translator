@@ -32,12 +32,13 @@ class SpeechListener {
     required void Function(String text, bool isFinal) onText,
     void Function(double level)? onLevel,
   }) async {
-    if (_speech.isListening) {
+    try {
       await _speech.cancel();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
+    } catch (_) {}
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+
     _done = Completer<void>();
-    await _speech.listen(
+    final started = await _speech.listen(
       onResult: (result) => onText(result.recognizedWords, result.finalResult),
       onSoundLevelChange: onLevel,
       listenOptions: SpeechListenOptions(
@@ -51,11 +52,21 @@ class SpeechListener {
         localeId: localeId,
       ),
     );
+    if (!started) {
+      _finish();
+      throw Exception('Không thể khởi động micro');
+    }
   }
 
   Future<void> waitUntilIdle() async {
     final done = _done;
-    if (done != null) await done.future;
+    if (done != null) {
+      try {
+        await done.future.timeout(const Duration(seconds: 45));
+      } catch (_) {
+        _finish();
+      }
+    }
   }
 
   Future<void> stop() => _speech.stop();

@@ -144,10 +144,14 @@ class ContinuousSession extends ChangeNotifier {
       }
       if (running) {
         if (hadError || error != null) {
-          await Future<void>.delayed(const Duration(milliseconds: 1500));
-          error = null; // Clear error before retry so UI knows it's retrying
+          try {
+            await listener.cancel();
+          } catch (_) {}
+          await Future<void>.delayed(const Duration(milliseconds: 600));
+          await listener.ensureReady();
+          error = null;
         } else {
-          await Future<void>.delayed(const Duration(milliseconds: 200));
+          await Future<void>.delayed(const Duration(milliseconds: 150));
         }
       }
     }
@@ -179,7 +183,8 @@ class ContinuousSession extends ChangeNotifier {
           
           silenceTimer?.cancel();
           if (text.trim().isNotEmpty) {
-            silenceTimer = Timer(Duration(milliseconds: current.silenceMs), () {
+            final silence = current.silenceMs.clamp(400, 1000);
+            silenceTimer = Timer(Duration(milliseconds: silence), () {
               if (running) listener.stop();
             });
           }
@@ -325,10 +330,14 @@ class ContinuousSession extends ChangeNotifier {
     await audioRoute.apply(current.playback);
     phase = 'Đang nói';
     notifyListeners();
-    await speaker.speak(text, target.ttsLocale, rate: current.ttsRate, pitch: current.ttsPitch);
-    if (running) {
-      phase = 'Đang nghe';
-      notifyListeners();
+    try {
+      await speaker.speak(text, target.ttsLocale, rate: current.ttsRate, pitch: current.ttsPitch);
+    } finally {
+      await audioRoute.release();
+      if (running) {
+        phase = 'Đang nghe';
+        notifyListeners();
+      }
     }
   }
 
